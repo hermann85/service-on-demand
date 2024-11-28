@@ -1,1 +1,8 @@
-# service-on-demand
+# Service-on-demand
+
+- Docker
+- Ansible
+- Terraform
+- GitLab
+- Kubernetes
+- AWS
