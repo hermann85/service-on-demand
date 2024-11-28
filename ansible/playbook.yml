@@ -1,0 +1,25 @@
+---
+###################
+# Playbook
+###################
+- hosts: _master_1, _slave_1
+  vars:
+  become: true
+  roles:
+    - role: k8s_common
+
+- hosts: _master_1
+  vars:
+  become: true
+  roles:
+    - role: k8s_master
+
+- name: Get tokens
+  hosts: _master_1
+  become: true
+  tasks:
+    - name: Pause for 50 seconds
+      pause:
+        seconds: 50
+    - name: Get tokens
+      shell: kubeadm token create  --print-join-command

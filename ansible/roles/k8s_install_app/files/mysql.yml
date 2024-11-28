@@ -1,0 +1,77 @@
+---
+apiVersion: v1
+kind: PersistentVolume # Create a PV
+metadata:
+  name: mysql-data # Sets PV's name
+  labels:
+    type: local # Sets PV's type to local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 100M # Sets PV Volume
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Delete
+  hostPath:
+    path: "/mnt/data" # Sets the volume's path
+---
+apiVersion: v1
+kind: PersistentVolumeClaim # Create PVC
+metadata:
+  name: mysql-data-claim # Sets name of PV
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce # Sets read and write access
+  resources:
+    requests:
+      storage: 100M # Sets volume size
+---
+  # Create a deployment for mysql
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-deployment
+  labels:
+    app: mysql
+spec:
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: hermann_dzouavele/custom_mysql:latest
+        env:
+          - name: MYSQL_ROOT_PASSWORD
+            value: root
+          - name: MYSQL_DATABASE
+            value: database
+        ports:
+          - containerPort: 3306
+        volumeMounts:
+            - mountPath: /var/lib/mysql
+              name: mysqldata
+      volumes:
+        - name: mysqldata
+          persistentVolumeClaim:
+            claimName: mysql-data-claim
+---
+# Create a service for mysql
+apiVersion: v1
+kind: Service
+metadata:
+ name: mysql
+spec:
+ selector:
+   app: mysql
+ type: ClusterIP
+ ports:
+ - name: mysql-port
+   port: 3306
+   targetPort: 3306
+   protocol: TCP

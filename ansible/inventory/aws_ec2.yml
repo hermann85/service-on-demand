@@ -1,0 +1,12 @@
+---
+plugin: aws_ec2
+regions:
+  - "eu-west-3"
+aws_access_key: $AWS_ACCESS_KEY
+aws_secret_key: $AWS_ACCESS_KEY_ID
+keyed_groups:
+  - key: tags.Name
+filters:
+  instance-state-name : running
+compose:
+  ansible_host: public_ip_address

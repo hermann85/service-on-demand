@@ -1,0 +1,38 @@
+---
+  # Create a deployment for webapp
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp-deployment
+  labels:
+    app: webapp
+spec:
+  selector:
+    matchLabels:
+      app: webapp
+  template:
+    metadata:
+      labels:
+        app: webapp
+    spec:
+      containers:
+      - name: webapp
+        image: hermann_dzouavele/webapp:latest
+        env:
+        ports:
+          - containerPort: 80
+---
+# Create a service for webapp
+apiVersion: v1
+kind: Service
+metadata:
+ name: webapp-service
+spec:
+ selector:
+   app: webapp
+ type: NodePort
+ ports:
+ - name: webapp-port
+   port: 80
+   targetPort: 80
+   protocol: TCP

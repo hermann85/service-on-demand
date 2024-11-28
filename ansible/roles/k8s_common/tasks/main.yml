@@ -1,0 +1,48 @@
+---
+# tasks file for k8s_common
+
+- name: Disable swap
+  shell: swapoff -a && sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+
+- name: config containerd.conf
+  copy:
+    dest: /etc/modules-load.d/containerd.conf
+    content: |
+      overlay
+      br_netfilter
+
+- name: Configuration modprobe
+  shell: modprobe overlay && modprobe br_netfilter
+
+- name: Apt update
+  command: apt update
+
+- name: Installing curl, apt-transport-https and ca-certificates
+  shell: apt install -y curl gnupg2 software-properties-common apt-transport-https ca-certificates
+
+- name: Add Docker GPG apt Key
+  shell: curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmour -o /etc/apt/trusted.gpg.d/docker.gpg
+
+- name: Add Docker Repository
+  shell: add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" -y
+
+- name: Install Docker
+  shell: apt update && apt install -y containerd.io
+
+- name: Configuration Docker
+  shell: containerd config default | tee /etc/containerd/config.toml >/dev/null 2>&1 && sed -i 's/SystemdCgroup \= false/SystemdCgroup \= true/g' /etc/containerd/config.toml
+
+- name: Restart and enable containerd service
+  shell: systemctl restart containerd && systemctl enable containerd
+
+- name: Add Apt Repository for Kubernetes
+  shell: curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+- name: add Kubernetes apt repository
+  shell: echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /' | tee /etc/apt/sources.list.d/kubernetes.list
+
+- name: Apt update
+  command: apt update
+
+- name: Install Kubectl, Kubeadm and Kubelet
+  shell: apt install -y kubelet kubeadm kubectl && apt-mark hold kubelet kubeadm kubectl

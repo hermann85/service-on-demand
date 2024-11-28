@@ -1,0 +1,21 @@
+variables:
+
+stages:
+  - build_mysql_image
+  - build_php_image
+
+build_mysql_image:
+  stage: build_mysql_image
+  image:
+    name: "docker:latest"
+  script:
+    - cd mysql
+    - ./build-mysql-image.sh
+
+build_php_image:
+  stage: build_php_image
+  image:
+    name: "docker:latest"
+  script:
+    - cd php
+    - ./build-php-image.sh

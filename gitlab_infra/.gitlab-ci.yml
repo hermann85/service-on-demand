@@ -1,0 +1,55 @@
+default:
+  image:
+    name: hashicorp/terraform:light
+    entrypoint:
+      - /usr/bin/env
+      - "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+variables:
+  VAR_FILE: "dev.tfvars"
+
+stages:
+  - validate
+  - plan
+  - apply
+  - install_k8s
+
+before_script:
+  - export AWS_ACCESS_KEY=${AWS_ACCESS_KEY_ID}
+  - export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+  - terraform --version
+  - cd terraform
+  - terraform init
+
+validate:
+  stage: validate
+  script:
+    - terraform validate
+
+plan:
+  stage: plan
+  script:
+    - terraform plan -out plan.out -var-file=dev.tfvars
+  artifacts:
+    paths:
+      - terraform/plan.out
+
+apply:
+  stage: apply
+  script:
+    - terraform apply -input=false "plan.out"
+  dependencies:
+    - plan
+
+install_k8s:
+  stage: install_k8s
+  script:
+    - cd ..
+    - pwd
+    - mkdir ~/.ssh
+    - cp terraform/id_rsa.pub ~/.ssh/id_rsa.pub
+    - cp terraform/id_rsa ~/.ssh/id_rsa
+    - apt install -y python-dev python-pip ansible
+    - pip install boto3 botocore
+    - export ANSIBLE_CONFIG=ansible/ansible.cfg
+    - ansible-playbook -i ansible/inventory/aws_ec2.yml ansible/playbook.yml -u ubuntu -vv

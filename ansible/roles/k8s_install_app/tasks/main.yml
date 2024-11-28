@@ -1,0 +1,13 @@
+---
+# tasks file for k8s_install_app
+
+- name: Copy Yaml files
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/k8s/{{ item }}"
+  loop:
+    - mysql.yml
+    - webapp.yml
+
+- name : Deploy app from the master node
+  shell: kubectl apply -f /etc/k8s

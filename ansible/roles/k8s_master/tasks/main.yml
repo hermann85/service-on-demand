@@ -1,0 +1,21 @@
+---
+# tasks file for k8s_master
+
+- name: Define Node and pode
+  shell: export NODENAME=$(hostname -s) && export POD_CIDR="192.168.0.0/16" && export MASTER_PUBLIC_IP=$(curl ifconfig.me && echo "")
+
+- name: Pull required images
+  shell: kubeadm config images pull
+
+- name: Initializing k8s cluster
+  shell: kubeadm init --control-plane-endpoint=$(curl ifconfig.me && echo "") --apiserver-cert-extra-sans=$(curl ifconfig.me && echo "") --pod-network-cidr="192.168.0.0/16" --node-name $(hostname -s) --ignore-preflight-errors Swap
+
+- name: Setting up kubectl on Master Node
+  shell: export KUBECONFIG=/etc/kubernetes/admin.conf && mkdir -p $HOME/.kube && cp -i /etc/kubernetes/admin.conf $HOME/.kube/config && chown $(id -u):$(id -g) $HOME/.kube/config
+
+- name: Create igera-operator.yaml
+  shell: kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.26.1/manifests/tigera-operator.yaml
+
+- name: Install Claico Network Plugin Network
+  shell: curl https://raw.githubusercontent.com/projectcalico/calico/v3.26.1/manifests/custom-resources.yaml -O && kubectl create -f custom-resources.yaml
+
